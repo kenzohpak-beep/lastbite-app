@@ -1,1 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Impact — LastBite</title>
+  <link rel="stylesheet" href="./styles.css?v=1" />
+</head>
+<body data-page="impact">
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="back" href="./index.html" aria-label="Back">‹</a>
+      <div class="topbar__title">Impact</div>
+      <a class="topbar__link" href="./register.html" id="accountLink">Account</a>
+    </div>
+  </header>
 
+  <main class="main">
+    <section class="card">
+      <div class="card__title">Your impact</div>
+      <div class="card__sub">Based on your purchases on this device</div>
+      <div class="stats" id="yourImpact"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__title">Community impact</div>
+      <div class="card__sub">Platform-wide (sample stats)</div>
+      <div class="stats" id="communityImpact"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__title">Recent orders</div>
+      <div class="card__sub">Your last 10 orders</div>
+      <div class="orders" id="recentOrders"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Primary navigation">
+    <a class="tab" href="./index.html" data-tab="home">Home</a>
+    <a class="tab" href="./deals.html" data-tab="deals">Deals</a>
+    <a class="tab" href="./cart.html" data-tab="cart">Cart <span class="badge" id="cartBadge">0</span></a>
+    <a class="tab isOn" href="./impact.html" data-tab="impact">Impact</a>
+  </nav>
+
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
