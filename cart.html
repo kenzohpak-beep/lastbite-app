@@ -1,1 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Cart — LastBite</title>
+  <link rel="stylesheet" href="./styles.css?v=1" />
+</head>
+<body data-page="cart">
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="back" href="./deals.html" aria-label="Back">‹</a>
+      <div class="topbar__title">Cart</div>
+      <a class="topbar__link" href="./register.html" id="accountLink">Account</a>
+    </div>
+  </header>
 
+  <main class="main">
+    <section class="card" id="cartEmpty" style="display:none;">
+      <div class="card__title">Your cart is empty</div>
+      <div class="card__sub">Add a deal to start ordering.</div>
+      <div style="margin-top:12px;">
+        <a class="btn btn--primary btn--block" href="./deals.html">Browse deals</a>
+      </div>
+    </section>
+
+    <section class="card" style="padding:0;">
+      <div class="list" id="cartItems" style="padding:12px;"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">Summary</div>
+          <div class="card__sub" id="loginHint"></div>
+        </div>
+      </div>
+
+      <div class="summary" id="cartSummary"></div>
+
+      <form id="checkoutForm" style="margin-top:12px;">
+        <button class="btn btn--primary btn--block" type="submit" id="placeOrderBtn">Place order</button>
+        <div class="meta" id="orderMsg"></div>
+      </form>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Primary navigation">
+    <a class="tab" href="./index.html" data-tab="home">Home</a>
+    <a class="tab" href="./deals.html" data-tab="deals">Deals</a>
+    <a class="tab isOn" href="./cart.html" data-tab="cart">Cart <span class="badge" id="cartBadge">0</span></a>
+    <a class="tab" href="./impact.html" data-tab="impact">Impact</a>
+  </nav>
+
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
