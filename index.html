@@ -1,1 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>LastBite Mobile</title>
+  <link rel="stylesheet" href="./styles.css?v=1" />
+</head>
+<body data-page="home">
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="./index.html" aria-label="LastBite Home">
+        <img class="brand__logo" src="./assets/lastbite.png" alt="LastBite" onerror="this.style.display='none'" />
+        <span class="brand__text">LastBite</span>
+      </a>
+      <a class="topbar__link" href="./register.html" id="accountLink">Account</a>
+    </div>
+  </header>
 
+  <main class="main">
+    <section class="card hero">
+      <h1>Order surplus food near closing.</h1>
+      <p>Big discounts, short pickup windows, and a built-in impact tracker.</p>
+      <div class="row">
+        <a class="btn btn--primary" href="./deals.html">Browse deals</a>
+        <a class="btn" href="./cart.html">View cart</a>
+      </div>
+      <div class="pills" id="homePills"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">Your impact</div>
+          <div class="card__sub">Based on purchases on this device</div>
+        </div>
+        <a class="chipLink" href="./impact.html">Open</a>
+      </div>
+      <div class="stats" id="homeYourImpact"></div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <div>
+          <div class="card__title">Tonight’s picks</div>
+          <div class="card__sub">Popular deals near closing</div>
+        </div>
+        <a class="chipLink" href="./deals.html">See all</a>
+      </div>
+      <div class="list" id="homeDeals"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Primary navigation">
+    <a class="tab isOn" href="./index.html" data-tab="home">Home</a>
+    <a class="tab" href="./deals.html" data-tab="deals">Deals</a>
+    <a class="tab" href="./cart.html" data-tab="cart">Cart <span class="badge" id="cartBadge">0</span></a>
+    <a class="tab" href="./impact.html" data-tab="impact">Impact</a>
+  </nav>
+
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
