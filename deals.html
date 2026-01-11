@@ -1,1 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Deals — LastBite</title>
+  <link rel="stylesheet" href="./styles.css?v=1" />
+</head>
+<body data-page="deals">
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="back" href="./index.html" aria-label="Back">‹</a>
+      <div class="topbar__title">Browse Deals</div>
+      <a class="topbar__link" href="./register.html" id="accountLink">Account</a>
+    </div>
+  </header>
 
+  <main class="main">
+    <section class="card">
+      <div class="searchRow">
+        <input class="input" id="q" placeholder="Search partner, item, category…" />
+        <select class="select" id="sort" aria-label="Sort">
+          <option value="recommended">Top</option>
+          <option value="bestValue">% Off</option>
+          <option value="endingSoon">Ends soon</option>
+          <option value="lowestPrice">Lowest price</option>
+        </select>
+      </div>
+
+      <div class="chips" id="chips"></div>
+
+      <div class="row" style="margin-top:10px;">
+        <select class="select" id="partner" aria-label="Partner"></select>
+        <select class="select" id="tag" aria-label="Tag"></select>
+      </div>
+
+      <div class="meta" id="resultsCount"></div>
+    </section>
+
+    <section class="card" style="padding:0;">
+      <div class="list" id="dealsList" style="padding:12px;"></div>
+      <div class="empty" id="emptyState" style="display:none;">No deals match your filters.</div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Primary navigation">
+    <a class="tab" href="./index.html" data-tab="home">Home</a>
+    <a class="tab isOn" href="./deals.html" data-tab="deals">Deals</a>
+    <a class="tab" href="./cart.html" data-tab="cart">Cart <span class="badge" id="cartBadge">0</span></a>
+    <a class="tab" href="./impact.html" data-tab="impact">Impact</a>
+  </nav>
+
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
