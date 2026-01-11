@@ -1,1 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Account — LastBite</title>
+  <link rel="stylesheet" href="./styles.css?v=1" />
+</head>
+<body data-page="register">
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="back" href="./index.html" aria-label="Back">‹</a>
+      <div class="topbar__title">Account</div>
+      <div style="width:44px;"></div>
+    </div>
+  </header>
 
+  <main class="main">
+    <section class="card" id="accountView" style="display:none;">
+      <div class="card__title">You’re signed in</div>
+      <div class="card__sub" id="accountMeta"></div>
+
+      <div style="margin-top:12px; display:grid; gap:10px;">
+        <a class="btn btn--primary btn--block" href="./deals.html">Start ordering</a>
+        <button class="btn btn--ghost btn--block" type="button" id="logoutBtn">Log out</button>
+      </div>
+    </section>
+
+    <section class="card" id="registerView">
+      <div class="card__title">Create an account</div>
+      <div class="card__sub">Register to place orders and track your impact.</div>
+
+      <form id="registerForm" style="margin-top:12px; display:grid; gap:10px;">
+        <input class="input" id="name" placeholder="Full name" required />
+        <input class="input" id="email" type="email" placeholder="Email" required />
+        <input class="input" id="password" type="password" placeholder="Password (min 6 chars)" minlength="6" required />
+        <button class="btn btn--primary btn--block" type="submit">Register</button>
+        <div class="meta" id="registerMsg"></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card__title">Contact</div>
+      <div class="card__sub">Support: lastbite@gmail.com • 416-247-BITE</div>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="Primary navigation">
+    <a class="tab" href="./index.html" data-tab="home">Home</a>
+    <a class="tab" href="./deals.html" data-tab="deals">Deals</a>
+    <a class="tab" href="./cart.html" data-tab="cart">Cart <span class="badge" id="cartBadge">0</span></a>
+    <a class="tab" href="./impact.html" data-tab="impact">Impact</a>
+  </nav>
+
+  <script src="./data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
