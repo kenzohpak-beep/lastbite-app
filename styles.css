@@ -412,3 +412,46 @@ body[data-page="deals"] .card.filters .chip{
   font-size: 12px;
 }
 .brand__text { display: none; }
+/* Slightly shrink the Browse Deals filter section more for iPhone */
+@media (max-width: 430px){
+  body[data-page="deals"] .main{
+    padding-top: 10px;
+    gap: 10px;
+  }
+
+  body[data-page="deals"] .card.filters{
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  body[data-page="deals"] .card.filters .searchRow{
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) 102px;
+  }
+
+  body[data-page="deals"] .card.filters .input,
+  body[data-page="deals"] .card.filters .select{
+    padding: 8px 9px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  body[data-page="deals"] .card.filters .chips{
+    margin-top: 6px;
+    gap: 6px;
+  }
+
+  body[data-page="deals"] .card.filters .chip{
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  body[data-page="deals"] .card.filters .row{
+    gap: 8px;
+    margin-top: 6px !important;
+  }
+
+  body[data-page="deals"] .card.filters .meta{
+    margin-top: 8px;
+  }
+}
