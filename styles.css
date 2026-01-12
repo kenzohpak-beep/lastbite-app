@@ -455,3 +455,23 @@ body[data-page="deals"] .card.filters .chip{
     margin-top: 8px;
   }
 }
+/* Keep header + tabs the same width as the Home page content */
+:root{
+  --pageMax: 520px; /* matches .main max-width */
+}
+
+/* Header width = main width */
+.topbar__inner{
+  width: 100%;
+  max-width: var(--pageMax);
+  margin: 0 auto;
+}
+
+/* Tabs width = main width */
+.tabbar{
+  width: 100%;
+  max-width: var(--pageMax);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
