@@ -372,9 +372,7 @@ button, input, select{ font: inherit; }
   text-decoration:none;
 }
 
-.tab.isOn{
-  color: var(--ink);
-}
+.tab.isOn{ color: var(--ink); }
 
 .badge{
   min-width: 20px;
@@ -388,4 +386,28 @@ button, input, select{ font: inherit; }
   color: #fff;
   font-size: 12px;
   font-weight: 1200;
+}
+
+/* Deals page: compact filter card + prevent overflow */
+body[data-page="deals"] .card.filters{ padding: 12px; }
+
+body[data-page="deals"] .card.filters .input,
+body[data-page="deals"] .card.filters .select{
+  padding: 9px 10px;
+  border-radius: 12px;
+}
+
+body[data-page="deals"] .card.filters .searchRow{
+  grid-template-columns: minmax(0, 1fr) 110px;
+}
+body[data-page="deals"] .card.filters .searchRow > *{ min-width: 0; }
+body[data-page="deals"] .card.filters .row .select{
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+body[data-page="deals"] .card.filters .chips{ margin-top: 8px; }
+body[data-page="deals"] .card.filters .chip{
+  padding: 8px 10px;
+  font-size: 12px;
 }
