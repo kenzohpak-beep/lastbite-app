@@ -411,3 +411,4 @@ body[data-page="deals"] .card.filters .chip{
   padding: 8px 10px;
   font-size: 12px;
 }
+.brand__text { display: none; }
