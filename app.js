@@ -133,27 +133,19 @@
     const existing = readJSON(LS.community, null);
     if (existing) return existing;
 
-    // Stable “fake” stats based on day count so it looks realistic but not random every refresh
     const now = new Date();
     const daySeed = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
     const meals = 180000 + (daySeed % 9000);
     const kgFood = meals * D.IMPACT.kgFoodPerMeal * 0.98;
     const kgCO2e = meals * D.IMPACT.kgCO2ePerMeal * 1.02;
-    const savings = meals * 3.6; // sample
-    const donated = meals * 0.22; // sample
+    const savings = meals * 3.6;
+    const donated = meals * 0.22;
 
-    const obj = {
-      meals: Math.round(meals),
-      kgFood,
-      kgCO2e,
-      savings,
-      donated
-    };
+    const obj = { meals: Math.round(meals), kgFood, kgCO2e, savings, donated };
     writeJSON(LS.community, obj);
     return obj;
   }
 
-  // ---------- Page inits ----------
   function initHome() {
     const pills = document.getElementById("homePills");
     if (pills) {
@@ -485,7 +477,7 @@
 
       setCart([]);
       render();
-      msg.textContent = "Order placed. Check Impact to see your totals.";
+      msg.textContent = "Order placed. Check Your Impact to see your totals.";
     });
 
     render();
