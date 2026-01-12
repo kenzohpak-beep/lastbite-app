@@ -11,10 +11,13 @@
 
   --radius: 16px;
   --shadow: 0 10px 24px rgba(11,15,13,0.10);
+
+  /* Keep header + tabs the same width as content */
+  --pageMax: 520px;
 }
 
 *{ box-sizing:border-box; }
-html, body{ height:100%; }
+html, body{ height:100%; overflow-x:hidden; }
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
@@ -44,6 +47,10 @@ button, input, select{ font: inherit; }
   justify-content:space-between;
   padding: 0 14px;
   gap: 10px;
+
+  width: 100%;
+  max-width: var(--pageMax);
+  margin: 0 auto;
 }
 
 .topbar__title{
@@ -74,6 +81,9 @@ button, input, select{ font: inherit; }
   letter-spacing:-0.02em;
 }
 
+/* Hide the word “LastBite” if you kept it in HTML */
+.brand__text { display: none; }
+
 .back{
   width: 44px;
   height: 40px;
@@ -88,7 +98,7 @@ button, input, select{ font: inherit; }
 
 .main{
   padding: 14px 12px 88px;
-  max-width: 520px;
+  max-width: var(--pageMax);
   margin: 0 auto;
   display:grid;
   gap: 12px;
@@ -100,6 +110,7 @@ button, input, select{ font: inherit; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 14px;
+  max-width: 100%;
 }
 
 .card.hero h1{
@@ -136,6 +147,7 @@ button, input, select{ font: inherit; }
   gap: 10px;
   flex-wrap: wrap;
   align-items:center;
+  max-width: 100%;
 }
 
 .btn{
@@ -205,9 +217,11 @@ button, input, select{ font: inherit; }
 
 .searchRow{
   display:grid;
-  grid-template-columns: 1fr 120px;
+  grid-template-columns: minmax(0, 1fr) 120px;
   gap: 10px;
+  max-width: 100%;
 }
+.searchRow > *{ min-width:0; }
 
 .input{
   width:100%;
@@ -217,6 +231,7 @@ button, input, select{ font: inherit; }
   background: #fff;
   outline: none;
   font-weight: 800;
+  min-width:0;
 }
 .select{
   width:100%;
@@ -226,6 +241,7 @@ button, input, select{ font: inherit; }
   background: #fff;
   outline: none;
   font-weight: 900;
+  min-width:0;
 }
 
 .chips{
@@ -233,7 +249,9 @@ button, input, select{ font: inherit; }
   display:flex;
   gap: 8px;
   overflow:auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 2px;
+  max-width: 100%;
 }
 .chip{
   flex: 0 0 auto;
@@ -244,6 +262,7 @@ button, input, select{ font: inherit; }
   font-weight: 950;
   font-size: 13px;
   cursor:pointer;
+  white-space: nowrap;
 }
 .chip.isOn{
   border-color: rgba(34,179,90,0.35);
@@ -253,6 +272,7 @@ button, input, select{ font: inherit; }
 .list{
   display:grid;
   gap: 10px;
+  max-width: 100%;
 }
 
 .deal{
@@ -262,6 +282,7 @@ button, input, select{ font: inherit; }
   padding: 12px;
   display:grid;
   gap: 10px;
+  max-width: 100%;
 }
 
 .dealTop{
@@ -269,6 +290,7 @@ button, input, select{ font: inherit; }
   justify-content:space-between;
   gap: 10px;
   align-items:flex-start;
+  max-width: 100%;
 }
 
 .dealTitle{
@@ -286,6 +308,8 @@ button, input, select{ font: inherit; }
   display:flex;
   align-items:baseline;
   gap: 10px;
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 .priceNow{
   font-weight: 1200;
@@ -350,8 +374,9 @@ button, input, select{ font: inherit; }
 
 .tabbar{
   position: fixed;
-  left: 0;
-  right: 0;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
   bottom: 0;
   z-index: 60;
   background: #ffffff;
@@ -359,6 +384,9 @@ button, input, select{ font: inherit; }
   padding-bottom: env(safe-area-inset-bottom);
   display:grid;
   grid-template-columns: repeat(4, 1fr);
+
+  width: 100%;
+  max-width: var(--pageMax);
 }
 
 .tab{
@@ -388,8 +416,12 @@ button, input, select{ font: inherit; }
   font-weight: 1200;
 }
 
-/* Deals page: compact filter card + prevent overflow */
-body[data-page="deals"] .card.filters{ padding: 12px; }
+/* -------------------------
+   Deals page: compact filters + clean organizer layout
+   ------------------------- */
+body[data-page="deals"] .card.filters{
+  padding: 12px;
+}
 
 body[data-page="deals"] .card.filters .input,
 body[data-page="deals"] .card.filters .select{
@@ -400,18 +432,24 @@ body[data-page="deals"] .card.filters .select{
 body[data-page="deals"] .card.filters .searchRow{
   grid-template-columns: minmax(0, 1fr) 110px;
 }
-body[data-page="deals"] .card.filters .searchRow > *{ min-width: 0; }
-body[data-page="deals"] .card.filters .row .select{
-  flex: 1 1 0;
-  min-width: 0;
-}
-
 body[data-page="deals"] .card.filters .chips{ margin-top: 8px; }
 body[data-page="deals"] .card.filters .chip{
   padding: 8px 10px;
   font-size: 12px;
 }
-.brand__text { display: none; }
+
+/* IMPORTANT: keep Partner + Tag as a 2-column GRID (prevents “messed up” organizer) */
+body[data-page="deals"] .card.filters .row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+body[data-page="deals"] .card.filters .row .select{
+  width: 100%;
+  min-width: 0;
+}
+
 /* Slightly shrink the Browse Deals filter section more for iPhone */
 @media (max-width: 430px){
   body[data-page="deals"] .main{
@@ -426,7 +464,7 @@ body[data-page="deals"] .card.filters .chip{
 
   body[data-page="deals"] .card.filters .searchRow{
     gap: 8px;
-    grid-template-columns: minmax(0, 1fr) 102px;
+    grid-template-columns: minmax(0, 1fr) 96px; /* smaller sort column */
   }
 
   body[data-page="deals"] .card.filters .input,
@@ -446,60 +484,22 @@ body[data-page="deals"] .card.filters .chip{
     font-size: 12px;
   }
 
-  body[data-page="deals"] .card.filters .row{
-    gap: 8px;
-    margin-top: 6px !important;
-  }
-
   body[data-page="deals"] .card.filters .meta{
     margin-top: 8px;
   }
-}
-/* Keep header + tabs the same width as the Home page content */
-:root{
-  --pageMax: 520px; /* matches .main max-width */
+
+  /* Keep organizer 2-column on iPhone */
+  body[data-page="deals"] .card.filters .row{
+    gap: 8px;
+  }
 }
 
-/* Header width = main width */
-.topbar__inner{
-  width: 100%;
-  max-width: var(--pageMax);
-  margin: 0 auto;
-}
-
-/* Tabs width = main width */
-.tabbar{
-  width: 100%;
-  max-width: var(--pageMax);
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
-}
-/* Deals page: stop any horizontal overflow + make filters never exceed screen width */
-html, body { overflow-x: hidden; }
-
-body[data-page="deals"] .main,
-body[data-page="deals"] .card,
-body[data-page="deals"] .deal,
-body[data-page="deals"] .searchRow,
-body[data-page="deals"] .row{
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-}
-
-body[data-page="deals"] .searchRow > *,
-body[data-page="deals"] .row > *{
-  min-width: 0;
-}
-
-/* If the top filters still feel too wide on iPhone, stack them */
-@media (max-width: 430px){
+/* Only on very small phones: stack if absolutely necessary */
+@media (max-width: 360px){
   body[data-page="deals"] .card.filters .searchRow{
-    grid-template-columns: 1fr;   /* stack search + sort */
+    grid-template-columns: 1fr;
   }
   body[data-page="deals"] .card.filters .row{
-    flex-direction: column;       /* stack the two dropdowns */
-    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 }
