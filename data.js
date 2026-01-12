@@ -1,4 +1,3 @@
-// data.js (standalone for the new repo)
 window.LastBiteData = (function () {
   const PARTNERS = [
     "COBS Bread",
@@ -16,7 +15,6 @@ window.LastBiteData = (function () {
 
   const CATEGORIES = ["Bakery", "Bagels", "Pastries", "Pizza", "Dessert", "Bundles"];
 
-  // Impact factors (simple estimates)
   const IMPACT = {
     kgFoodPerMeal: 0.6,
     kgCO2ePerMeal: 1.8,
@@ -25,7 +23,6 @@ window.LastBiteData = (function () {
     donationRate: 0.05
   };
 
-  // Deals dataset (mobile ordering)
   const DEALS = [
     { id:"cobs-1", partner:"COBS Bread", category:"Bakery", title:"End-of-day Bread Bag", description:"Assorted loaves/rolls (best-of-day selection).", price:6.99, originalValue:18.00, window:"8:00–9:00 PM", windowEnd:"21:00", distanceKm:1.2, deliveryAvailable:false, tags:["Best value"], dietary:["Vegetarian"], emoji:"🥖" },
     { id:"cobs-2", partner:"COBS Bread", category:"Bakery", title:"Pastry Surprise Pack", description:"Mixed pastries (varies by day).", price:7.49, originalValue:19.00, window:"8:00–9:00 PM", windowEnd:"21:00", distanceKm:1.2, deliveryAvailable:true, tags:["Limited"], dietary:["Vegetarian"], emoji:"🥐" },
