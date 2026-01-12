@@ -475,3 +475,31 @@ body[data-page="deals"] .card.filters .chip{
   right: auto;
   transform: translateX(-50%);
 }
+/* Deals page: stop any horizontal overflow + make filters never exceed screen width */
+html, body { overflow-x: hidden; }
+
+body[data-page="deals"] .main,
+body[data-page="deals"] .card,
+body[data-page="deals"] .deal,
+body[data-page="deals"] .searchRow,
+body[data-page="deals"] .row{
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+body[data-page="deals"] .searchRow > *,
+body[data-page="deals"] .row > *{
+  min-width: 0;
+}
+
+/* If the top filters still feel too wide on iPhone, stack them */
+@media (max-width: 430px){
+  body[data-page="deals"] .card.filters .searchRow{
+    grid-template-columns: 1fr;   /* stack search + sort */
+  }
+  body[data-page="deals"] .card.filters .row{
+    flex-direction: column;       /* stack the two dropdowns */
+    align-items: stretch;
+  }
+}
