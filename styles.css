@@ -162,6 +162,10 @@ button, input, select{ font: inherit; }
   font-weight: 950;
   cursor:pointer;
   user-select:none;
+
+  /* KEY: allow wrapping so buttons never widen the page */
+  white-space: normal;
+  text-align: center;
 }
 .btn--primary{
   background: var(--primary);
@@ -232,6 +236,7 @@ button, input, select{ font: inherit; }
   outline: none;
   font-weight: 800;
   min-width:0;
+  max-width:100%;
 }
 .select{
   width:100%;
@@ -242,6 +247,7 @@ button, input, select{ font: inherit; }
   outline: none;
   font-weight: 900;
   min-width:0;
+  max-width:100%;
 }
 
 .chips{
@@ -283,6 +289,9 @@ button, input, select{ font: inherit; }
   display:grid;
   gap: 10px;
   max-width: 100%;
+
+  /* KEY: contains any accidental long content */
+  overflow: hidden;
 }
 
 .dealTop{
@@ -292,16 +301,26 @@ button, input, select{ font: inherit; }
   align-items:flex-start;
   max-width: 100%;
 }
+/* KEY: stop flex children from forcing overflow */
+.dealTop > *{ min-width:0; }
 
 .dealTitle{
   font-weight: 1100;
   letter-spacing:-0.02em;
+
+  /* KEY: wrap long titles instead of widening page */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .dealMeta{
   margin-top: 2px;
   color: var(--muted);
   font-size: 12px;
+
+  /* KEY: wrap long meta lines */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .priceRow{
@@ -417,10 +436,19 @@ button, input, select{ font: inherit; }
 }
 
 /* -------------------------
-   Deals page: compact filters + clean organizer layout
+   Deals page: compact filters + clean organizer layout (NO overflow)
    ------------------------- */
 body[data-page="deals"] .card.filters{
   padding: 12px;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* KEY: ensure NOTHING inside the filter card can expand past the phone width */
+body[data-page="deals"] .card.filters,
+body[data-page="deals"] .card.filters *{
+  min-width: 0;
+  max-width: 100%;
 }
 
 body[data-page="deals"] .card.filters .input,
@@ -438,10 +466,10 @@ body[data-page="deals"] .card.filters .chip{
   font-size: 12px;
 }
 
-/* IMPORTANT: keep Partner + Tag as a 2-column GRID (prevents “messed up” organizer) */
+/* IMPORTANT: keep organizer as a 2-column GRID */
 body[data-page="deals"] .card.filters .row{
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
   align-items: stretch;
 }
@@ -450,7 +478,7 @@ body[data-page="deals"] .card.filters .row .select{
   min-width: 0;
 }
 
-/* Slightly shrink the Browse Deals filter section more for iPhone */
+/* iPhone: tighter, but still 2-column organizer */
 @media (max-width: 430px){
   body[data-page="deals"] .main{
     padding-top: 10px;
@@ -464,7 +492,7 @@ body[data-page="deals"] .card.filters .row .select{
 
   body[data-page="deals"] .card.filters .searchRow{
     gap: 8px;
-    grid-template-columns: minmax(0, 1fr) 96px; /* smaller sort column */
+    grid-template-columns: minmax(0, 1fr) 92px; /* smaller sort column to fit iPhone */
   }
 
   body[data-page="deals"] .card.filters .input,
@@ -488,13 +516,12 @@ body[data-page="deals"] .card.filters .row .select{
     margin-top: 8px;
   }
 
-  /* Keep organizer 2-column on iPhone */
   body[data-page="deals"] .card.filters .row{
     gap: 8px;
   }
 }
 
-/* Only on very small phones: stack if absolutely necessary */
+/* Very small phones only: allow stacking if absolutely needed */
 @media (max-width: 360px){
   body[data-page="deals"] .card.filters .searchRow{
     grid-template-columns: 1fr;
