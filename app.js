@@ -1,6 +1,5 @@
 (function () {
-  const D = window.LastBiteData;
-  if (!D) return;
+  let D = window.LastBiteData;
 
   const LS = {
     cart: "lastbite_cart_v1",
@@ -9,6 +8,9 @@
     user: "lastbite_user_v1",
     community: "lastbite_community_impact_v1"
   };
+
+  // Demo mode: allow adding to cart any time of day (still DISPLAY pickup windows)
+  const DEMO_ORDER_ANYTIME = true;
 
   function readJSON(key, fallback) {
     try {
@@ -20,28 +22,46 @@
     }
   }
   function writeJSON(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // ignore
+    }
   }
 
   function money(n) {
     try {
-      return new Intl.NumberFormat(undefined, { style: "currency", currency: "CAD" }).format(n);
+      return new Intl.NumberFormat(undefined, { style: "currency", currency: "CAD" }).format(Number(n || 0));
     } catch {
-      return "$" + (Math.round(n * 100) / 100).toFixed(2);
+      return "$" + (Math.round(Number(n || 0) * 100) / 100).toFixed(2);
     }
   }
-  function round1(n) { return Math.round(n * 10) / 10; }
+  function round1(n) {
+    return Math.round(Number(n || 0) * 10) / 10;
+  }
 
-  function getCart() { return readJSON(LS.cart, []); }
-  function setCart(cart) { writeJSON(LS.cart, cart); renderCartBadges(); }
+  function getCart() {
+    const c = readJSON(LS.cart, []);
+    return Array.isArray(c) ? c : [];
+  }
+  function setCart(cart) {
+    writeJSON(LS.cart, cart);
+    renderCartBadges();
+  }
 
-  function getUser() { return readJSON(LS.user, null); }
-  function setUser(u) { writeJSON(LS.user, u); }
+  function getUser() {
+    return readJSON(LS.user, null);
+  }
+  function setUser(u) {
+    writeJSON(LS.user, u);
+  }
 
   function getUserImpact() {
     return readJSON(LS.impact, { meals: 0, kgFood: 0, kgCO2e: 0, donated: 0, savings: 0 });
   }
-  function setUserImpact(v) { writeJSON(LS.impact, v); }
+  function setUserImpact(v) {
+    writeJSON(LS.impact, v);
+  }
 
   function cartLines(cart) {
     return cart
@@ -54,41 +74,47 @@
 
   function cartTotals(cart) {
     const lines = cartLines(cart);
-    const subtotal = lines.reduce((s, l) => s + l.deal.price * l.qty, 0);
-    const original = lines.reduce((s, l) => s + l.deal.originalValue * l.qty, 0);
+    const subtotal = lines.reduce((s, l) => s + Number(l.deal.price || 0) * Number(l.qty || 0), 0);
+    const original = lines.reduce((s, l) => s + Number(l.deal.originalValue || 0) * Number(l.qty || 0), 0);
     const savings = Math.max(0, original - subtotal);
     return { lines, subtotal, original, savings };
   }
 
   function computeImpactForOrder(lines) {
-    const meals = lines.reduce((s, l) => s + l.qty, 0);
-    const kgFood = meals * D.IMPACT.kgFoodPerMeal;
-    const kgCO2e = meals * D.IMPACT.kgCO2ePerMeal;
+    const meals = lines.reduce((s, l) => s + Number(l.qty || 0), 0);
+    const kgFood = meals * Number(D.IMPACT.kgFoodPerMeal || 0);
+    const kgCO2e = meals * Number(D.IMPACT.kgCO2ePerMeal || 0);
 
     const grossProfit = lines.reduce((s, l) => {
-      const per = l.mode === "delivery" ? D.IMPACT.grossProfitDelivery : D.IMPACT.grossProfitPickup;
-      return s + per * l.qty;
+      const per = l.mode === "delivery" ? Number(D.IMPACT.grossProfitDelivery || 0) : Number(D.IMPACT.grossProfitPickup || 0);
+      return s + per * Number(l.qty || 0);
     }, 0);
 
-    const donated = grossProfit * D.IMPACT.donationRate;
+    const donated = grossProfit * Number(D.IMPACT.donationRate || 0);
     return { meals, kgFood, kgCO2e, donated, grossProfit };
   }
 
   function pctOff(deal) {
-    return Math.round((1 - deal.price / deal.originalValue) * 100);
+    const p = Number(deal.price || 0);
+    const o = Number(deal.originalValue || 0);
+    if (!o) return 0;
+    return Math.round((1 - p / o) * 100);
   }
 
   function parseEndTimeToday(hhmm) {
-    const [h, m] = hhmm.split(":").map(Number);
+    const [h, m] = String(hhmm || "23:59").split(":").map(Number);
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h || 0, m || 0, 0, 0);
   }
 
+  // Display helper (NO longer used to block ordering)
   function endsText(deal) {
     const end = parseEndTimeToday(deal.windowEnd);
     const now = new Date();
     const diff = end.getTime() - now.getTime();
-    if (diff <= 0) return "Closed";
+
+    if (diff <= 0) return DEMO_ORDER_ANYTIME ? "Pickup window ended (demo)" : "Closed";
+
     const mins = Math.round(diff / 60000);
     if (mins <= 120) return "Ends " + mins + "m";
     return "Ends " + end.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -98,16 +124,21 @@
     const deal = D.DEALS.find((x) => x.id === dealId);
     if (!deal) return;
 
+    const m = mode === "delivery" ? "delivery" : "pickup";
+    const q = Math.max(1, Math.min(99, Number(qty || 1)));
+
     const cart = getCart();
-    const existing = cart.find((x) => x.id === dealId && x.mode === mode);
-    if (existing) existing.qty += qty;
-    else cart.push({ id: dealId, mode, qty });
+    const existing = cart.find((x) => x.id === dealId && x.mode === m);
+
+    if (existing) existing.qty = Number(existing.qty || 0) + q;
+    else cart.push({ id: dealId, mode: m, qty: q });
+
     setCart(cart);
   }
 
   function renderCartBadges() {
     const cart = getCart();
-    const n = cart.reduce((sum, it) => sum + (it.qty || 0), 0);
+    const n = cart.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
     const badge = document.getElementById("cartBadge");
     if (badge) badge.textContent = String(n);
   }
@@ -125,7 +156,7 @@
   function renderAccountLinks() {
     const u = getUser();
     document.querySelectorAll("#accountLink").forEach((el) => {
-      el.textContent = u ? (u.name.split(" ")[0] || "Account") : "Account";
+      el.textContent = u ? (String(u.name || "").split(" ")[0] || "Account") : "Account";
     });
   }
 
@@ -136,8 +167,8 @@
     const now = new Date();
     const daySeed = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
     const meals = 180000 + (daySeed % 9000);
-    const kgFood = meals * D.IMPACT.kgFoodPerMeal * 0.98;
-    const kgCO2e = meals * D.IMPACT.kgCO2ePerMeal * 1.02;
+    const kgFood = meals * Number(D.IMPACT.kgFoodPerMeal || 0) * 0.98;
+    const kgCO2e = meals * Number(D.IMPACT.kgCO2ePerMeal || 0) * 1.02;
     const savings = meals * 3.6;
     const donated = meals * 0.22;
 
@@ -161,9 +192,9 @@
     const impactEl = document.getElementById("homeYourImpact");
     if (impactEl) {
       impactEl.innerHTML = `
-        <div class="stat"><div class="stat__k">Meals</div><div class="stat__v">${ui.meals.toLocaleString()}</div></div>
-        <div class="stat"><div class="stat__k">Food saved</div><div class="stat__v">${Math.round(ui.kgFood).toLocaleString()} kg</div></div>
-        <div class="stat"><div class="stat__k">CO₂ avoided</div><div class="stat__v">${Math.round(ui.kgCO2e).toLocaleString()} kg</div></div>
+        <div class="stat"><div class="stat__k">Meals</div><div class="stat__v">${Number(ui.meals || 0).toLocaleString()}</div></div>
+        <div class="stat"><div class="stat__k">Food saved</div><div class="stat__v">${Math.round(Number(ui.kgFood || 0)).toLocaleString()} kg</div></div>
+        <div class="stat"><div class="stat__k">CO₂ avoided</div><div class="stat__v">${Math.round(Number(ui.kgCO2e || 0)).toLocaleString()} kg</div></div>
         <div class="stat"><div class="stat__k">You saved</div><div class="stat__v">${money(ui.savings)}</div></div>
       `;
     }
@@ -171,12 +202,13 @@
     const list = document.getElementById("homeDeals");
     if (list) {
       const picks = D.DEALS.slice()
-        .sort((a, b) => (pctOff(b) - pctOff(a)) || (a.distanceKm - b.distanceKm))
+        .sort((a, b) => pctOff(b) - pctOff(a) || a.distanceKm - b.distanceKm)
         .slice(0, 4);
 
-      list.innerHTML = picks.map((deal) => {
-        const closed = endsText(deal) === "Closed";
-        return `
+      // IMPORTANT CHANGE: no disabling based on time
+      list.innerHTML = picks
+        .map((deal) => {
+          return `
           <div class="deal">
             <div class="dealTop">
               <div>
@@ -189,12 +221,13 @@
                 </div>
               </div>
             </div>
-            <button class="btn btn--primary btn--block" type="button" data-add="${deal.id}" ${closed ? "disabled" : ""}>
+            <button class="btn btn--primary btn--block" type="button" data-add="${deal.id}">
               Add to cart (Pickup)
             </button>
           </div>
         `;
-      }).join("");
+        })
+        .join("");
 
       list.querySelectorAll("[data-add]").forEach((btn) => {
         btn.addEventListener("click", () => addToCart(btn.getAttribute("data-add"), "pickup", 1));
@@ -253,7 +286,7 @@
       if (state.sort === "bestValue") copy.sort((a, b) => pctOff(b) - pctOff(a));
       else if (state.sort === "endingSoon") copy.sort((a, b) => parseEndTimeToday(a.windowEnd) - parseEndTimeToday(b.windowEnd));
       else if (state.sort === "lowestPrice") copy.sort((a, b) => a.price - b.price);
-      else copy.sort((a, b) => (pctOff(b) - pctOff(a)) || (a.distanceKm - b.distanceKm));
+      else copy.sort((a, b) => pctOff(b) - pctOff(a) || a.distanceKm - b.distanceKm);
       return copy;
     }
 
@@ -264,11 +297,12 @@
       resultsEl.textContent = `Showing ${sorted.length} deal${sorted.length === 1 ? "" : "s"}.`;
       emptyEl.style.display = sorted.length ? "none" : "block";
 
-      listEl.innerHTML = sorted.map((deal) => {
-        const closed = endsText(deal) === "Closed";
-        const deliveryTxt = deal.deliveryAvailable ? "Pickup or delivery" : "Pickup only";
+      // IMPORTANT CHANGE: remove time-based disabling
+      listEl.innerHTML = sorted
+        .map((deal) => {
+          const deliveryTxt = deal.deliveryAvailable ? "Pickup or delivery" : "Pickup only";
 
-        return `
+          return `
           <div class="deal">
             <div class="dealTop">
               <div>
@@ -285,16 +319,17 @@
             </div>
 
             <div class="row">
-              <button class="btn btn--primary btn--block" type="button" data-add="${deal.id}" ${closed ? "disabled" : ""}>
+              <button class="btn btn--primary btn--block" type="button" data-add="${deal.id}">
                 Add (Pickup)
               </button>
-              <button class="btn btn--block" type="button" data-add-del="${deal.id}" ${(!deal.deliveryAvailable || closed) ? "disabled" : ""}>
+              <button class="btn btn--block" type="button" data-add-del="${deal.id}" ${deal.deliveryAvailable ? "" : "disabled"}>
                 Add (Delivery)
               </button>
             </div>
           </div>
         `;
-      }).join("");
+        })
+        .join("");
 
       listEl.querySelectorAll("[data-add]").forEach((btn) => {
         btn.addEventListener("click", () => addToCart(btn.getAttribute("data-add"), "pickup", 1));
@@ -302,6 +337,15 @@
       listEl.querySelectorAll("[data-add-del]").forEach((btn) => {
         btn.addEventListener("click", () => addToCart(btn.getAttribute("data-add-del"), "delivery", 1));
       });
+
+      // Safety: ensure nothing is disabled due to old markup (except delivery unavailable)
+      if (DEMO_ORDER_ANYTIME) {
+        listEl.querySelectorAll("button[data-add]").forEach((b) => {
+          b.disabled = false;
+          b.removeAttribute("disabled");
+          b.style.pointerEvents = "auto";
+        });
+      }
     }
 
     chipsEl.addEventListener("click", (e) => {
@@ -313,10 +357,22 @@
       render();
     });
 
-    qEl.addEventListener("input", () => { state.q = qEl.value.trim(); render(); });
-    partnerEl.addEventListener("change", () => { state.partner = partnerEl.value; render(); });
-    tagEl.addEventListener("change", () => { state.tag = tagEl.value; render(); });
-    sortEl.addEventListener("change", () => { state.sort = sortEl.value; render(); });
+    qEl.addEventListener("input", () => {
+      state.q = qEl.value.trim();
+      render();
+    });
+    partnerEl.addEventListener("change", () => {
+      state.partner = partnerEl.value;
+      render();
+    });
+    tagEl.addEventListener("change", () => {
+      state.tag = tagEl.value;
+      render();
+    });
+    sortEl.addEventListener("change", () => {
+      state.sort = sortEl.value;
+      render();
+    });
 
     render();
     setInterval(render, 60000);
@@ -344,9 +400,10 @@
         ? `Signed in as <strong>${u.name}</strong>`
         : `Not signed in. <a class="chipLink" href="./register.html">Create an account</a> to place orders.`;
 
-      itemsEl.innerHTML = lines.map((l) => {
-        const modeLabel = l.mode === "delivery" ? "Delivery" : "Pickup";
-        return `
+      itemsEl.innerHTML = lines
+        .map((l) => {
+          const modeLabel = l.mode === "delivery" ? "Delivery" : "Pickup";
+          return `
           <div class="deal">
             <div class="dealTop">
               <div>
@@ -374,7 +431,8 @@
             </div>
           </div>
         `;
-      }).join("");
+        })
+        .join("");
 
       summaryEl.innerHTML = `
         <div class="sumRow"><span>Subtotal</span><strong>${money(subtotal)}</strong></div>
@@ -387,7 +445,7 @@
       const cart = getCart();
       const idx = cart.findIndex((x) => x.id === id && x.mode === mode);
       if (idx < 0) return;
-      cart[idx].qty = Math.max(0, (cart[idx].qty || 0) + delta);
+      cart[idx].qty = Math.max(0, Number(cart[idx].qty || 0) + Number(delta || 0));
       if (cart[idx].qty === 0) cart.splice(idx, 1);
       setCart(cart);
       render();
@@ -426,7 +484,7 @@
 
       let next = cart.filter((x) => !(x.id === id && x.mode === oldMode));
       const existing = next.find((x) => x.id === id && x.mode === newMode);
-      if (existing) existing.qty += qty;
+      if (existing) existing.qty = Number(existing.qty || 0) + qty;
       else next.push({ id, mode: newMode, qty });
 
       setCart(next);
@@ -468,11 +526,11 @@
 
       const ui = getUserImpact();
       setUserImpact({
-        meals: ui.meals + impact.meals,
-        kgFood: ui.kgFood + impact.kgFood,
-        kgCO2e: ui.kgCO2e + impact.kgCO2e,
-        donated: ui.donated + impact.donated,
-        savings: ui.savings + savings
+        meals: Number(ui.meals || 0) + impact.meals,
+        kgFood: Number(ui.kgFood || 0) + impact.kgFood,
+        kgCO2e: Number(ui.kgCO2e || 0) + impact.kgCO2e,
+        donated: Number(ui.donated || 0) + impact.donated,
+        savings: Number(ui.savings || 0) + savings
       });
 
       setCart([]);
@@ -491,38 +549,43 @@
 
     const ui = getUserImpact();
     your.innerHTML = `
-      <div class="stat"><div class="stat__k">Meals rescued</div><div class="stat__v">${ui.meals.toLocaleString()}</div></div>
-      <div class="stat"><div class="stat__k">Food saved</div><div class="stat__v">${Math.round(ui.kgFood).toLocaleString()} kg</div></div>
-      <div class="stat"><div class="stat__k">CO₂ avoided</div><div class="stat__v">${Math.round(ui.kgCO2e).toLocaleString()} kg</div></div>
+      <div class="stat"><div class="stat__k">Meals rescued</div><div class="stat__v">${Number(ui.meals || 0).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat__k">Food saved</div><div class="stat__v">${Math.round(Number(ui.kgFood || 0)).toLocaleString()} kg</div></div>
+      <div class="stat"><div class="stat__k">CO₂ avoided</div><div class="stat__v">${Math.round(Number(ui.kgCO2e || 0)).toLocaleString()} kg</div></div>
       <div class="stat"><div class="stat__k">You saved</div><div class="stat__v">${money(ui.savings)}</div></div>
     `;
 
     const ci = ensureCommunityImpact();
     comm.innerHTML = `
-      <div class="stat"><div class="stat__k">Meals rescued</div><div class="stat__v">${ci.meals.toLocaleString()}</div></div>
-      <div class="stat"><div class="stat__k">Food saved</div><div class="stat__v">${Math.round(ci.kgFood).toLocaleString()} kg</div></div>
-      <div class="stat"><div class="stat__k">CO₂ avoided</div><div class="stat__v">${Math.round(ci.kgCO2e).toLocaleString()} kg</div></div>
+      <div class="stat"><div class="stat__k">Meals rescued</div><div class="stat__v">${Number(ci.meals || 0).toLocaleString()}</div></div>
+      <div class="stat"><div class="stat__k">Food saved</div><div class="stat__v">${Math.round(Number(ci.kgFood || 0)).toLocaleString()} kg</div></div>
+      <div class="stat"><div class="stat__k">CO₂ avoided</div><div class="stat__v">${Math.round(Number(ci.kgCO2e || 0)).toLocaleString()} kg</div></div>
       <div class="stat"><div class="stat__k">Est. saved</div><div class="stat__v">${money(ci.savings)}</div></div>
     `;
 
     const orders = readJSON(LS.orders, []);
-    const rows = orders.slice(0, 10).map((o) => {
-      const d = new Date(o.ts);
-      const when = d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    const rows = orders
+      .slice(0, 10)
+      .map((o) => {
+        const d = new Date(o.ts);
+        const when = d.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-      const title = (o.lines || []).map((l) => {
-        const deal = D.DEALS.find((x) => x.id === l.id);
-        return deal ? `${l.qty}× ${deal.title}` : `${l.qty}× Item`;
-      }).join(" • ");
+        const title = (o.lines || [])
+          .map((l) => {
+            const deal = D.DEALS.find((x) => x.id === l.id);
+            return deal ? `${l.qty}× ${deal.title}` : `${l.qty}× Item`;
+          })
+          .join(" • ");
 
-      return `
+        return `
         <div class="order">
           <div style="font-weight:1100;">${when}</div>
           <div class="meta">${title}</div>
           <div class="meta">Saved ${money(o.savings)} • ${o.impact.meals} meals • ${round1(o.impact.kgCO2e)} kg CO₂e</div>
         </div>
       `;
-    }).join("");
+      })
+      .join("");
 
     recent.innerHTML = rows || `<div class="meta">No orders yet. Add deals and place an order from your cart.</div>`;
   }
@@ -578,7 +641,8 @@
     renderAccountLinks();
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function boot() {
+    if (!D || !D.DEALS) return;
     initCommon();
     const page = document.body.getAttribute("data-page");
     if (page === "home") initHome();
@@ -586,5 +650,17 @@
     if (page === "cart") initCart();
     if (page === "impact") initImpact();
     if (page === "register") initRegister();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const start = Date.now();
+    (function waitForData() {
+      D = window.LastBiteData || D;
+      if (D || Date.now() - start > 2000) {
+        boot();
+        return;
+      }
+      setTimeout(waitForData, 25);
+    })();
   });
 })();
