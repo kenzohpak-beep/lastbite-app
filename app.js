@@ -1,5 +1,5 @@
 (function () {
-  let D = window.LastBiteData;
+  let D = null;
 
   const LS = {
     cart: "lastbite_cart_v1",
@@ -9,26 +9,73 @@
     community: "lastbite_community_impact_v1"
   };
 
-  // Demo mode: allow adding to cart any time of day (still DISPLAY pickup windows)
+  // DEMO MODE: allow adding to cart any time of day (still DISPLAY pickup windows)
   const DEMO_ORDER_ANYTIME = true;
 
-  function readJSON(key, fallback) {
+  /* ---------------------------
+     Storage (localStorage + fallback to window.name)
+  --------------------------- */
+  const NAME_PREFIX = "__lastbite_app_store__=";
+
+  function safeLocalStorageGet(key) {
     try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      return JSON.parse(raw);
+      return localStorage.getItem(key);
     } catch {
-      return fallback;
+      return null;
     }
   }
-  function writeJSON(key, value) {
+  function safeLocalStorageSet(key, value) {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      localStorage.setItem(key, value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function readWindowNameStore() {
+    try {
+      const n = String(window.name || "");
+      if (!n.startsWith(NAME_PREFIX)) return {};
+      return JSON.parse(n.slice(NAME_PREFIX.length)) || {};
+    } catch {
+      return {};
+    }
+  }
+  function writeWindowNameStore(obj) {
+    try {
+      window.name = NAME_PREFIX + JSON.stringify(obj || {});
     } catch {
       // ignore
     }
   }
 
+  function readJSON(key, fallback) {
+    try {
+      const raw = safeLocalStorageGet(key);
+      if (raw != null) return JSON.parse(raw);
+    } catch {
+      // fall through
+    }
+    const store = readWindowNameStore();
+    return store[key] != null ? store[key] : fallback;
+  }
+
+  function writeJSON(key, value) {
+    const serialized = JSON.stringify(value);
+    const ok = safeLocalStorageSet(key, serialized);
+
+    // always keep fallback store in sync
+    const store = readWindowNameStore();
+    store[key] = value;
+    writeWindowNameStore(store);
+
+    return ok;
+  }
+
+  /* ---------------------------
+     Helpers
+  --------------------------- */
   function money(n) {
     try {
       return new Intl.NumberFormat(undefined, { style: "currency", currency: "CAD" }).format(Number(n || 0));
@@ -66,7 +113,7 @@
   function cartLines(cart) {
     return cart
       .map((it) => {
-        const deal = D.DEALS.find((x) => x.id === it.id);
+        const deal = (D && D.DEALS) ? D.DEALS.find((x) => x.id === it.id) : null;
         return deal ? { ...it, deal } : null;
       })
       .filter(Boolean);
@@ -107,7 +154,7 @@
     return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h || 0, m || 0, 0, 0);
   }
 
-  // Display helper (NO longer used to block ordering)
+  // Display only (does NOT block ordering in demo mode)
   function endsText(deal) {
     const end = parseEndTimeToday(deal.windowEnd);
     const now = new Date();
@@ -121,7 +168,7 @@
   }
 
   function addToCart(dealId, mode, qty) {
-    const deal = D.DEALS.find((x) => x.id === dealId);
+    const deal = D && D.DEALS ? D.DEALS.find((x) => x.id === dealId) : null;
     if (!deal) return;
 
     const m = mode === "delivery" ? "delivery" : "pickup";
@@ -139,8 +186,13 @@
   function renderCartBadges() {
     const cart = getCart();
     const n = cart.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+
     const badge = document.getElementById("cartBadge");
     if (badge) badge.textContent = String(n);
+
+    // optional secondary badge ids (safe)
+    const badge2 = document.getElementById("cartCount");
+    if (badge2) badge2.textContent = String(n);
   }
 
   function setActiveTab() {
@@ -167,6 +219,7 @@
     const now = new Date();
     const daySeed = Math.floor(now.getTime() / (1000 * 60 * 60 * 24));
     const meals = 180000 + (daySeed % 9000);
+
     const kgFood = meals * Number(D.IMPACT.kgFoodPerMeal || 0) * 0.98;
     const kgCO2e = meals * Number(D.IMPACT.kgCO2ePerMeal || 0) * 1.02;
     const savings = meals * 3.6;
@@ -177,6 +230,44 @@
     return obj;
   }
 
+  /* ---------------------------
+     Click delegation (fixes “button clicks but nothing happens”)
+  --------------------------- */
+  function flashAdded(btn) {
+    if (!btn) return;
+    const prev = btn.textContent;
+    btn.textContent = "Added ✓";
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = prev;
+    }, 700);
+  }
+
+  function initAddToCartDelegation() {
+    if (document.documentElement._lbAddDelegation) return;
+    document.documentElement._lbAddDelegation = true;
+
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-add], [data-add-del]");
+      if (!btn) return;
+
+      // prevent any default navigation/behavior
+      e.preventDefault();
+      e.stopPropagation();
+
+      const id = btn.getAttribute("data-add") || btn.getAttribute("data-add-del");
+      const mode = btn.hasAttribute("data-add-del") ? "delivery" : "pickup";
+
+      addToCart(id, mode, 1);
+      renderCartBadges();
+      flashAdded(btn);
+    });
+  }
+
+  /* ---------------------------
+     Pages
+  --------------------------- */
   function initHome() {
     const pills = document.getElementById("homePills");
     if (pills) {
@@ -205,7 +296,7 @@
         .sort((a, b) => pctOff(b) - pctOff(a) || a.distanceKm - b.distanceKm)
         .slice(0, 4);
 
-      // IMPORTANT CHANGE: no disabling based on time
+      // IMPORTANT: never disable “Add” due to time
       list.innerHTML = picks
         .map((deal) => {
           return `
@@ -228,10 +319,6 @@
         `;
         })
         .join("");
-
-      list.querySelectorAll("[data-add]").forEach((btn) => {
-        btn.addEventListener("click", () => addToCart(btn.getAttribute("data-add"), "pickup", 1));
-      });
     }
   }
 
@@ -297,7 +384,6 @@
       resultsEl.textContent = `Showing ${sorted.length} deal${sorted.length === 1 ? "" : "s"}.`;
       emptyEl.style.display = sorted.length ? "none" : "block";
 
-      // IMPORTANT CHANGE: remove time-based disabling
       listEl.innerHTML = sorted
         .map((deal) => {
           const deliveryTxt = deal.deliveryAvailable ? "Pickup or delivery" : "Pickup only";
@@ -330,22 +416,6 @@
         `;
         })
         .join("");
-
-      listEl.querySelectorAll("[data-add]").forEach((btn) => {
-        btn.addEventListener("click", () => addToCart(btn.getAttribute("data-add"), "pickup", 1));
-      });
-      listEl.querySelectorAll("[data-add-del]").forEach((btn) => {
-        btn.addEventListener("click", () => addToCart(btn.getAttribute("data-add-del"), "delivery", 1));
-      });
-
-      // Safety: ensure nothing is disabled due to old markup (except delivery unavailable)
-      if (DEMO_ORDER_ANYTIME) {
-        listEl.querySelectorAll("button[data-add]").forEach((b) => {
-          b.disabled = false;
-          b.removeAttribute("disabled");
-          b.style.pointerEvents = "auto";
-        });
-      }
     }
 
     chipsEl.addEventListener("click", (e) => {
@@ -439,6 +509,8 @@
         <div class="sumRow"><span>Original value</span><span>${money(original)}</span></div>
         <div class="sumRow"><span>You save</span><strong>${money(savings)}</strong></div>
       `;
+
+      renderCartBadges();
     }
 
     function updateQty(id, mode, delta) {
@@ -626,7 +698,15 @@
 
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem(LS.user);
+        try {
+          localStorage.removeItem(LS.user);
+        } catch {
+          // ignore
+        }
+        const store = readWindowNameStore();
+        delete store[LS.user];
+        writeWindowNameStore(store);
+
         renderAccountLinks();
         render();
       });
@@ -636,14 +716,13 @@
   }
 
   function initCommon() {
+    initAddToCartDelegation(); // key fix
     renderCartBadges();
     setActiveTab();
     renderAccountLinks();
   }
 
-  function boot() {
-    if (!D || !D.DEALS) return;
-    initCommon();
+  function initPage() {
     const page = document.body.getAttribute("data-page");
     if (page === "home") initHome();
     if (page === "deals") initDeals();
@@ -652,11 +731,18 @@
     if (page === "register") initRegister();
   }
 
+  function boot() {
+    if (!D || !D.DEALS || !D.IMPACT) return;
+    initCommon();
+    initPage();
+  }
+
+  // IMPORTANT: wait for data.js to load
   document.addEventListener("DOMContentLoaded", () => {
     const start = Date.now();
     (function waitForData() {
       D = window.LastBiteData || D;
-      if (D || Date.now() - start > 2000) {
+      if (D || Date.now() - start > 2500) {
         boot();
         return;
       }
